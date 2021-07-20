@@ -35,6 +35,7 @@ public class TestController {
     @PostMapping("/test")
     public String test(@RequestBody User user) {
         System.out.println(user);
+        System.out.println("hot-fix");
         return "ok";
     }
 }
