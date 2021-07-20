@@ -1,0 +1,172 @@
+﻿<!DOCTYPE>
+<html>
+<head>
+    <title>原生json格式化及高亮</title>
+    <meta name="description" content="json,格式化,高亮">
+    <meta name="keywords" content="json,格式化,高亮">
+    <script src="c.js" type="text/javascript"></script>
+    <link href="s.css" type="text/css" rel="stylesheet"/>
+</head>
+<body>
+<div class="HeadersRow">
+    <h3 id="HeaderSubTitle1">输入Java类：</h3>
+    <textarea id="java"></textarea>
+</div>
+<button id="javaToJson">转换成Json格式</button>
+<span>&nbsp;转换成json格式后再粘贴到下方格式化</span>
+<div class="HeadersRow">
+    <div id="HeaderTitle"> JSON格式化及高亮 &nbsp;&copy;&nbsp;2012&nbsp; &nbsp;<span
+            style='color:#aaa;font-weight:bold;font-style:italic'>Random_Coder</span></div>
+    <h3 id="HeaderSubTitle2">JSON格式化及高亮:</h3>
+    <textarea id="RawJson"></textarea>
+</div>
+<div id="ControlsRow">
+    <input type="Button" value="格式化" onclick="Process()"/>
+    <span id="TabSizeHolder">
+    缩进量
+    <select id="TabSize" onchange="TabSizeChanged()">
+      <option value="1">1</option>
+      <option value="2" selected="true">2</option>
+      <option value="3">3</option>
+      <option value="4">4</option>
+      <option value="5">5</option>
+      <option value="6">6</option>
+    </select>
+  </span>
+    <label for="QuoteKeys">
+        <input type="checkbox" id="QuoteKeys" onclick="QuoteKeysClicked()" checked="true"/>
+        引号
+    </label>&nbsp;
+    <a href="javascript:void(0);" onclick="SelectAllClicked()">全选</a>
+
+    <span id="CollapsibleViewHolder">
+      <label for="CollapsibleView">
+        <input type="checkbox" id="CollapsibleView" onclick="CollapsibleViewClicked()" checked="true"/>
+        显示控制
+      </label>
+  </span>
+    <span id="CollapsibleViewDetail">
+    <a href="javascript:void(0);" onclick="ExpandAllClicked()">展开</a>
+    <a href="javascript:void(0);" onclick="CollapseAllClicked()">叠起</a>
+    <a href="javascript:void(0);" onclick="CollapseLevel(3)">2级</a>
+    <a href="javascript:void(0);" onclick="CollapseLevel(4)">3级</a>
+    <a href="javascript:void(0);" onclick="CollapseLevel(5)">4级</a>
+    <a href="javascript:void(0);" onclick="CollapseLevel(6)">5级</a>
+    <a href="javascript:void(0);" onclick="CollapseLevel(7)">6级</a>
+    <a href="javascript:void(0);" onclick="CollapseLevel(8)">7级</a>
+    <a href="javascript:void(0);" onclick="CollapseLevel(9)">8级</a>
+  </span>
+</div>
+<div id="Canvas" class="Canvas"></div>
+<!--<script src="urchin.js" type="text/javascript"></script>-->
+<script type="text/javascript" src="m.js"></script>
+<script type="text/javascript">
+    function ajax(options) {
+        // 存储的是默认值
+        var defaults = {
+            type: 'get',
+            url: '',
+            data: {},
+            header: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            success: function () {
+            },
+            error: function () {
+            }
+        };
+
+        // 使用options对象中的属性覆盖defaults对象中的属性
+        Object.assign(defaults, options);
+
+        /*1.创建ajax对象*/
+        var xhr = new XMLHttpRequest();
+
+        // 拼接请求参数的变量，默认接收对象格式
+        var params = '';
+        // 循环用户传递进来的对象格式参数
+        for (var attr in defaults.data) {
+            // 将参数转换为字符串格式
+            params += attr + '=' + defaults.data[attr] + '&';
+        }
+        // 将参数最后面的&截取掉
+        params = params.substr(0, params.length - 1);
+
+        // 判断请求方式
+        if (defaults.type === 'get') {
+            defaults.url = defaults.url + '?' + params;
+        }
+
+        /*2.配置ajax对象*/
+        xhr.open(defaults.type, defaults.url);
+
+        /*3.发送请求*/
+        // 如果请求方式为post
+        if (defaults.type === 'post') {
+            // 用户希望的向服务器端传递的请求参数的类型
+            var contentType = defaults.header['Content-Type']
+            // 设置请求参数格式的类型
+            xhr.setRequestHeader('Content-Type', contentType);
+
+            // 判断用户希望的请求参数格式的类型
+            // 如果类型为json
+            if (contentType === 'application/json') {
+                // 向服务器端传递json数据格式的参数
+                xhr.send(JSON.stringify(defaults.data))
+            } else {
+                // 向服务器端传递普通类型的请求参数
+                xhr.send(params);
+            }
+        } else {
+            // 如果请求方式为get
+            xhr.send();
+        }
+
+        /*4.监听xhr对象下面的onload事件*/
+        // 当xhr对象接收完响应数据后触发
+        xhr.onload = function () {
+            // xhr.getResponseHeader()
+            // 获取响应头中的数据
+            var contentType = xhr.getResponseHeader('Content-Type');
+            // 服务器端返回的数据
+            var responseText = xhr.responseText;
+
+            // 如果响应类型中包含applicaition/json
+            if (contentType.includes('application/json')) {
+                // 将json字符串转换为json对象
+                responseText = JSON.parse(responseText)
+            }
+
+            // 当http状态码等于200的时候
+            if (xhr.status === 200) {
+                // 请求成功 调用处理成功情况的函数
+                defaults.success(responseText, xhr);
+            } else {
+                // 请求失败 调用处理失败情况的函数
+                defaults.error(responseText, xhr);
+            }
+        }
+    }
+
+    var btnToJson = document.getElementById("javaToJson");
+    var javaText = document.getElementById("java");
+    var RawJson = document.getElementById("RawJson");
+    btnToJson.onclick = function () {
+        ajax({
+            type: 'post',
+            url: '/hello',
+            data: {
+                'javaStr': javaText.value
+            },
+            success: function (data) {
+                RawJson.value = data
+            },
+            error: function (data) {
+                console.log(data)
+            }
+        })
+    }
+</script>
+</body>
+</html>
+
